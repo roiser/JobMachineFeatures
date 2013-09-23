@@ -5,7 +5,7 @@ from datetime import datetime
 
 class mjf:
 
-  def __init__(self):
+  def __init__(self, ext=False):
     self.varnames = ['MACHINEFEATURES', 'JOBFEATURES'] # names of machine features environment variables
     self.magicip = '169.254.169.254'              # magic ip address in case of IaaS / openstack
     self.data = {}                                # the machine / job features data structure
@@ -59,8 +59,7 @@ class mjf:
   def data(self):
     return self.data
 
-  def run(self, ext=False):
-    self.ext = ext
+  def run(self):
     self._collect()
     self._print()
 
@@ -68,4 +67,4 @@ class mjf:
 
 
 
-if __name__ == "__main__" : mjf().run(ext=True)
+if __name__ == "__main__" : mjf(ext=True).run()
