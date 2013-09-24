@@ -3,13 +3,15 @@
 import os, json
 from datetime import datetime
 
+class MJFException(Exception): pass
+
 class mjf:
 
   def __init__(self, ext=False):
     self.varnames = ['MACHINEFEATURES', 'JOBFEATURES'] # names of machine features environment variables
     self.magicip = '169.254.169.254'              # magic ip address in case of IaaS / openstack
     self.data = {}                                # the machine / job features data structure
-    self.ext = False                              # is the module called from the command line (True) or imported (False)
+    self.ext = ext                                # is the module called from the command line (True) or imported (False)
 
   def _print(self):
     print json.dumps(self.data)
@@ -19,7 +21,7 @@ class mjf:
     if self.ext :                                 # if called from the command line, return messages within the data structure
       if not self.data.has_key('messages') : self.data['messages'] = [msg]
       else : self.data['messages'].append(msg)
-    else : raise msg                              # else raise an exception
+    else : raise MJFException(msg)                              # else raise an exception
 
   def _collectViaFile(self):
     for var in self.varnames :
