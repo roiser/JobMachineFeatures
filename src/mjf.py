@@ -9,9 +9,11 @@ class mjf:
 
   def __init__(self, ext=False):
     self.varnames = ['MACHINEFEATURES', 'JOBFEATURES'] # names of machine features environment variables
+    self.varnameslower = map(lambda x: x.lower(), self.varnames) # lower case versions of the env variable names
     self.magicip = '169.254.169.254'              # magic ip address in case of IaaS / openstack
     self.data = {}                                # the machine / job features data structure
     self.ext = ext                                # is the module called from the command line (True) or imported (False)
+    if not self.ext : self.collect()
 
   def _print(self):
     print json.dumps(self.data)
@@ -52,21 +54,34 @@ class mjf:
     elif self._isVMNode() and self._pingMagicIP() : self._collectViaHttp() # alternatively try magic IP
     else : self._message('ERROR', 'Cannot find job / machine features information on this node')
 
+  def _run(self):
+    self._collect()
+    self._print()
+
   def clean(self):
     self.data = {}
 
   def collect(self):
     self._collect()
 
-  def data(self):
+  def features(self):
     return self.data
 
-  def run(self):
-    self._collect()
-    self._print()
+  def featureKeys(self):
+    dic = {}
+    for var in self.varnameslower :
+      if self.data.has_key(var) : dic[var] = self.data[var].keys()
+    return dic
 
+  def feature(self, var, feat=''):
+    if feat :
+      if self.data.has_key(feat.lower()) : return self.data[feat.lower()].get(var)
+    else :
+      for varl in self.varnameslower :
+        if self.data.has_key(varl) and self.data[varl].has_key(var) : return self.data[varl][var]
+    return ''
   
-
-
-
-if __name__ == "__main__" : mjf(ext=True).run()
+#
+# main
+#
+if __name__ == "__main__" : mjf(ext=True).run()   # if the script is called from the command line execute and return data structure
