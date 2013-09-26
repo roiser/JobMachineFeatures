@@ -3,6 +3,9 @@
 # C extensions
 *.so
 
+# vi tmp file
+*~
+
 # Packages
 *.egg
 *.egg-info
