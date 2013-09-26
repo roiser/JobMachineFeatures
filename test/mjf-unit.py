@@ -154,4 +154,6 @@ class MJFTestCommandline(unittest.TestCase) :
     self.env.cease()
 
 if __name__ == '__main__' :
-  unittest.main()
+  testclasses = [MJFTestPythonModule, MJFTestPythonAPI, MJFTestCommandline]
+  alltests = unittest.TestSuite(map(lambda x : unittest.TestLoader().loadTestsFromTestCase(x), testclasses))
+  unittest.TextTestRunner(verbosity=2).run(alltests)
