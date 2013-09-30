@@ -2,12 +2,13 @@
 
 import os, json
 from datetime import datetime
+from optparse import OptionParser
 
 class MJFException(Exception): pass
 
 class mjf:
 
-  def __init__(self, ext=False):
+  def __init__(self, ext=False, pret=False, verb=False):
     """
     initialise the class instance and collect machine / job features found on the node
     and store it in the internal data structure.
@@ -21,6 +22,10 @@ class mjf:
     self.magicip = '169.254.169.254'              # magic ip address in case of IaaS / openstack
     self.data = {}                                # the machine / job features data structure
     self.ext = ext                                # is the module called from the command line (True) or imported (False)
+    self.verb = verb
+    self.pret = pret
+    self.indent = None
+    if self.pret : self.indent = 2
     self.collect()
 
   def clean(self):
@@ -82,7 +87,7 @@ class mjf:
 
 
   def _print(self):
-    print json.dumps(self.data)
+    print json.dumps(self.data, indent=self.indent)
 
   def _message(self, typ, txt) :
     msg = '%s UTC - %s - %s' % (datetime.utcnow().isoformat(), typ, txt)
@@ -127,4 +132,11 @@ class mjf:
 #
 # main
 #
-if __name__ == "__main__" : mjf(ext=True)._run()   # if the script is called from the command line execute and return data structure
+if __name__ == "__main__" :
+  parser = OptionParser()
+  parser.add_option('-p', '--pretty', action='store_true', default=False, dest='pretty', help='turn on pretty printing of output')
+  parser.add_option('-v', '--verbose', action='store_true', default=False, dest='verbose', help='increase verbosity of the script')
+  (options, args) = parser.parse_args()
+  if args : parser.print_help()
+
+  mjf(ext=True, pret=options.pretty, verb=options.verbose)._run()   # if the script is called from the command line execute and return data structure
