@@ -8,7 +8,7 @@ class MJFException(Exception): pass
 
 class mjf:
 
-  def __init__(self, ext=False, pret=False, verb=False):
+  def __init__(self, ext=False, pret=False, verb=False, dbg=False):
     """
     initialise the class instance and collect machine / job features found on the node
     and store it in the internal data structure.
@@ -24,6 +24,7 @@ class mjf:
     self.ext = ext                                # is the module called from the command line (True) or imported (False)
     self.verb = verb
     self.pret = pret
+    self.dbg = dbg
     self.indent = None
     if self.pret : self.indent = 2
     self.collect()
@@ -96,20 +97,37 @@ class mjf:
       else : self.data['messages'].append(msg)
     else : raise MJFException(msg)                              # else raise an exception
 
+  def _error(self, txt) : self._message('ERROR', txt)
+
+  def _info(self, txt) :
+    if self.verb or self.dbg : self._message('INFO', txt)
+
+  def _debug(self, txt) :
+    if self.dbg : self._message('DEBUG', txt)
+
   def _collectViaFile(self):
+    self._info('Collecting information from files')
     for var in self.varnames :
+      self._debug('Looking for variable %s' % var)
       datakey = var.lower()
       if not self.data.has_key(datakey) : self.data[datakey] = {}
-      for f in os.listdir(os.environ[var]) :      # for each file in the machine/job features directory
-        fp = open(os.environ[var] + os.sep + f)
-        val = fp.read()                           # ... read the file content
-        fp.close()
-        if val[-1] == '\n' : val = val[:-1]
-        if val.isdigit() : val = int(val)         # try to convert the value to integer
-        else :
-          try: val = float(val)                   # ... or float
-          except ValueError: pass                 # ... or leave as string
-        self.data[datakey][f] = val
+      envvar = os.environ[var]
+      if os.path.isdir(envvar) :
+        self._debug('Collecting information from directory %s' % os.environ[var])
+        for f in os.listdir(envvar) :      # for each file in the machine/job features directory
+          self._debug('Checking value of file %s in directory %s' % (f, envvar))
+          fp = open(envvar + os.sep + f)
+          val = fp.read()                           # ... read the file content
+          self._debug('Value of file %s is %s' % (f,val))
+          fp.close()
+          if val[-1] == '\n' : val = val[:-1]
+          if val.isdigit() : val = int(val)         # try to convert the value to integer
+          else :
+            try: val = float(val)                   # ... or float
+            except ValueError: pass                 # ... or leave as string
+          self._debug('Storing value %s for key %s' % (val, f))
+          self.data[datakey][f] = val
+      else : self._error('Environment variable %s=%s does not point to a valid directory' % (var, envvar))
 
   def _isVMNode(self):
     pass
@@ -135,8 +153,9 @@ class mjf:
 if __name__ == "__main__" :
   parser = OptionParser()
   parser.add_option('-p', '--pretty', action='store_true', default=False, dest='pretty', help='turn on pretty printing of output')
-  parser.add_option('-v', '--verbose', action='store_true', default=False, dest='verbose', help='increase verbosity of the script')
+  parser.add_option('-v', '--verbose', action='store_true', default=False, dest='verbose', help='increase verbosity of the tool')
+  parser.add_option('-d', '--debug', action='store_true', default=False, dest='debug', help='enable debug output of the tool')
   (options, args) = parser.parse_args()
   if args : parser.print_help()
 
-  mjf(ext=True, pret=options.pretty, verb=options.verbose)._run()   # if the script is called from the command line execute and return data structure
+  mjf(ext=True, pret=options.pretty, verb=options.verbose, dbg=options.debug)._run()   # if the script is called from the command line execute and return data structure
