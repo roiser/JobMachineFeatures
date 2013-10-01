@@ -39,7 +39,7 @@ class Environ():
       self.cmd_setup = True
       os.environ['PATH'] += os.pathsep + self.mdd
 
-  def cease(self):
+  def tearDown(self):
     if self.pyt_setup :
       sys.path = [ x for x in sys.path if x != self.mdd ]
       self.pyt_setup = False
@@ -61,17 +61,17 @@ class MJFTestPythonModule(unittest.TestCase) :
   def test_import(self):
     self.env.setup(py=True)
     import mjf
-    self.env.cease()
+    self.env.tearDown()
 
   def test_nofeatures(self):
     self.env.setup(py=True)
     from mjf import mjf, MJFException
     try: m = mjf()
     except MJFException,e : self.assertTrue(e.__str__().find('ERROR'))
-    self.env.cease()
+    self.env.tearDown()
 
   def tearDown(self):
-    self.env.cease()
+    self.env.tearDown()
 
 class MJFTestPythonAPI(unittest.TestCase) :
 
@@ -123,7 +123,7 @@ class MJFTestPythonAPI(unittest.TestCase) :
     self.assertFalse(f4)
 
   def tearDown(self):
-    self.env.cease()
+    self.env.tearDown()
 
 
 class MJFTestCommandline(unittest.TestCase) :
@@ -135,7 +135,7 @@ class MJFTestCommandline(unittest.TestCase) :
     self.env.setup(cmd=True, mjf=True)
     r = os.popen("mjf.py").read()[:-1]
     self.assertNotEquals(r, '')
-    self.env.cease()
+    self.env.tearDown()
 
   def test_content(self):
     self.env.setup(cmd=True, mjf=True)
@@ -146,14 +146,14 @@ class MJFTestCommandline(unittest.TestCase) :
       self.assertTrue(d.has_key(f))
       for k in self.env.features[f] :
         self.assertTrue(d[f].has_key(k))
-    self.env.cease()
+    self.env.tearDown()
 
   def test_notwork(self):
     self.env.setup(cmd=True)
     r = os.popen('mjf.py').read()[:-1]
     d = json.loads(r)
     self.assertTrue(d.has_key('messages'))
-    self.env.cease()
+    self.env.tearDown()
 
   def test_optionverbose(self):
     self.env.setup(cmd=True, mjf=True)
@@ -162,6 +162,7 @@ class MJFTestCommandline(unittest.TestCase) :
     self.assertEquals(r.find('\n'), -1)
     self.assertNotEquals(r.find(' - INFO - '), -1)
     self.assertEquals(r.find(' - DEBUG - '), -1)
+    self.env.tearDown()
 
   def test_optiondebug(self):
     self.env.setup(cmd=True, mjf=True)
@@ -170,6 +171,7 @@ class MJFTestCommandline(unittest.TestCase) :
     self.assertEquals(r.find('\n'), -1)
     self.assertNotEquals(r.find(' - INFO - '), -1)
     self.assertNotEquals(r.find(' - DEBUG - '), -1)
+    self.env.tearDown()
 
   def test_optionpretty(self):
     self.env.setup(cmd=True, mjf=True)
@@ -178,6 +180,7 @@ class MJFTestCommandline(unittest.TestCase) :
     self.assertNotEquals(r.find('\n'), -1)
     self.assertEquals(r.find(' - INFO - '), -1)
     self.assertEquals(r.find(' - DEBUG - '), -1)
+    self.env.tearDown()
 
   def test_optionprettyverbose(self):
     self.env.setup(cmd=True, mjf=True)
@@ -186,6 +189,7 @@ class MJFTestCommandline(unittest.TestCase) :
     self.assertNotEquals(r.find('\n'), -1)
     self.assertNotEquals(r.find(' - INFO - '), -1)
     self.assertEquals(r.find(' - DEBUG - '), -1)
+    self.env.tearDown()
 
   def test_optionprettydebug(self):
     self.env.setup(cmd=True, mjf=True)
@@ -194,6 +198,7 @@ class MJFTestCommandline(unittest.TestCase) :
     self.assertNotEquals(r.find('\n'), -1)
     self.assertNotEquals(r.find(' - INFO - '), -1)
     self.assertNotEquals(r.find(' - DEBUG - '), -1)
+    self.env.tearDown()
 
   def test_optionverbosedebug(self):
     self.env.setup(cmd=True, mjf=True)
@@ -202,9 +207,10 @@ class MJFTestCommandline(unittest.TestCase) :
     self.assertEquals(r.find('\n'), -1)
     self.assertNotEquals(r.find(' - INFO - '), -1)
     self.assertNotEquals(r.find(' - DEBUG - '), -1)
+    self.env.tearDown()
 
   def tearDown(self):
-    self.env.cease()
+    self.env.tearDown()
 
 if __name__ == '__main__' :
   testclasses = [MJFTestPythonModule, MJFTestPythonAPI, MJFTestCommandline]
