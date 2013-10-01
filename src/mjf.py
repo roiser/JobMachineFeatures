@@ -11,11 +11,19 @@ class mjf:
   def __init__(self, ext=False, pret=False, verb=False, dbg=False):
     """
     initialise the class instance and collect machine / job features found on the node
-    and store it in the internal data structure.
+    and store it in the internal data structure. Messages are returned either within the
+    returned datastructure (key='messages') if called from the command line or as exceptions
+    (ERRORs), or stdout (INFO, DEBUG meesages) in case of importing as a module.
+    message levels are: ERROR - INFO - DEBUG 
 
+    options:
     ext: is the script called from the command line (True) or imported (False). This is
          e.g. used when to decide whether to throw exceptions (import) or to return
          messages within the internal data structure (command line).
+    pret: enable pretty printing of the output (indentation level=2 with newlines), if set
+         to False the json output is returned in one string without newlines
+    verb: enable verbose output of the tool, ie. return messages with INFO level or above
+    dbg: enable debug output of the tool (lot of info), ie. DEUBG level or above
     """
     self.varnames = ['MACHINEFEATURES', 'JOBFEATURES'] # names of machine features environment variables
     self.varnameslower = map(lambda x: x.lower(), self.varnames) # lower case versions of the env variable names
@@ -95,7 +103,9 @@ class mjf:
     if self.ext :                                 # if called from the command line, return messages within the data structure
       if not self.data.has_key('messages') : self.data['messages'] = [msg]
       else : self.data['messages'].append(msg)
-    else : raise MJFException(msg)                              # else raise an exception
+    else :
+      if typ == 'ERROR' : raise MJFException(msg) # else in case of error raise an exception
+      else: print msg                             # for other message types print them on stdout
 
   def _error(self, txt) : self._message('ERROR', txt)
 
