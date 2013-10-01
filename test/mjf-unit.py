@@ -150,6 +150,54 @@ class MJFTestCommandline(unittest.TestCase) :
     self.assertTrue(d.has_key('messages'))
     self.env.cease()
 
+  def test_optionverbose(self):
+    self.env.setup(cmd=True, mjf=True)
+    r = os.popen('mjf.py -v').read()[:-1]
+    self.assertTrue(r)
+    self.assertEquals(r.find('\n'), -1)
+    self.assertNotEquals(r.find(' - INFO - '), -1)
+    self.assertEquals(r.find(' - DEBUG - '), -1)
+
+  def test_optiondebug(self):
+    self.env.setup(cmd=True, mjf=True)
+    r = os.popen('mjf.py -d').read()[:-1]
+    self.assertTrue(r)
+    self.assertEquals(r.find('\n'), -1)
+    self.assertNotEquals(r.find(' - INFO - '), -1)
+    self.assertNotEquals(r.find(' - DEBUG - '), -1)
+
+  def test_optionpretty(self):
+    self.env.setup(cmd=True, mjf=True)
+    r = os.popen('mjf.py -p').read()[:-1]
+    self.assertTrue(r)
+    self.assertNotEquals(r.find('\n'), -1)
+    self.assertEquals(r.find(' - INFO - '), -1)
+    self.assertEquals(r.find(' - DEBUG - '), -1)
+
+  def test_optionprettyverbose(self):
+    self.env.setup(cmd=True, mjf=True)
+    r = os.popen('mjf.py -p -v').read()[:-1]
+    self.assertTrue(r)
+    self.assertNotEquals(r.find('\n'), -1)
+    self.assertNotEquals(r.find(' - INFO - '), -1)
+    self.assertEquals(r.find(' - DEBUG - '), -1)
+
+  def test_optionprettydebug(self):
+    self.env.setup(cmd=True, mjf=True)
+    r = os.popen('mjf.py -p -d').read()[:-1]
+    self.assertTrue(r)
+    self.assertNotEquals(r.find('\n'), -1)
+    self.assertNotEquals(r.find(' - INFO - '), -1)
+    self.assertNotEquals(r.find(' - DEBUG - '), -1)
+
+  def test_optionverbosedebug(self):
+    self.env.setup(cmd=True, mjf=True)
+    r = os.popen('mjf.py -v -d').read()[:-1]
+    self.assertTrue(r)
+    self.assertEquals(r.find('\n'), -1)
+    self.assertNotEquals(r.find(' - INFO - '), -1)
+    self.assertNotEquals(r.find(' - DEBUG - '), -1)
+
   def tearDown(self):
     self.env.cease()
 
