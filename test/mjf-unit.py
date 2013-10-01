@@ -1,5 +1,10 @@
 #!/usr/bin/env python
 
+"""
+unit tests for the mjf tool, both cli and python module imported
+run like \"python mjf-unit.py\"
+"""
+
 import os, sys, unittest, json
 
 class Environ():
