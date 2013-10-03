@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import os, json
+import os, json, socket, urllib2
 from datetime import datetime
 from optparse import OptionParser
 
@@ -27,7 +27,8 @@ class mjf:
     """
     self.varnames = ['MACHINEFEATURES', 'JOBFEATURES'] # names of machine features environment variables
     self.varnameslower = map(lambda x: x.lower(), self.varnames) # lower case versions of the env variable names
-    self.magicip = '169.254.169.254'              # magic ip address in case of IaaS / openstack
+    self.httpip = '169.254.169.254'               # ip address for metat data in case of IaaS (openstack)
+    self.httpport = 80
     self.data = {}                                # the machine / job features data structure
     self.ext = ext                                # is the module called from the command line (True) or imported (False)
     self.verb = verb
@@ -115,12 +116,21 @@ class mjf:
   def _debug(self, txt) :
     if self.dbg : self._message('DEBUG', txt)
 
+  def _addData(self, feature, key, value) :
+    if not self.data.has_key(feature) : self.data[feature] = {}
+    if value.isdigit() : value = int(value)   # try to convert the value to integer
+    else :
+      try: value = float(value)               # ... or float
+      except ValueError: pass                 # ... or leave as string
+    self._debug('Storing value %s for key %s' % (value, key))
+    self.data[feature][key] = value
+
+
   def _collectViaFile(self):
     self._info('Collecting information from files')
     for var in self.varnames :
       self._debug('Looking for variable %s' % var)
       datakey = var.lower()
-      if not self.data.has_key(datakey) : self.data[datakey] = {}
       envvar = os.environ[var]
       if os.path.isdir(envvar) :
         self._debug('Collecting information from directory %s' % os.environ[var])
@@ -131,26 +141,29 @@ class mjf:
           self._debug('Value of file %s is %s' % (f,val))
           fp.close()
           if val[-1] == '\n' : val = val[:-1]
-          if val.isdigit() : val = int(val)         # try to convert the value to integer
-          else :
-            try: val = float(val)                   # ... or float
-            except ValueError: pass                 # ... or leave as string
-          self._debug('Storing value %s for key %s' % (val, f))
-          self.data[datakey][f] = val
+          self._addData(datakey, f, val)
       else : self._error('Environment variable %s=%s does not point to a valid directory' % (var, envvar))
 
-  def _isVMNode(self):
-    pass
-
-  def _pingMagicIP(self):
-    pass
+  def _serviceHttp(self):
+    sock = socket.socket(socket.AF_INET)
+    try : sock.connect((self.httpip,self.httpport))
+    except Exception,e:
+      print e
+      return False
+    return True
         
   def _collectViaHttp(self):
-    pass
+    data = urllib2.urlopen('http://%s/openstack/latest/meta_data.json'%self.httpip).read()
+    jdat = json.loads(data)
+    if jdat.has_key('meta') :
+      for k in jdat['meta'].keys() :
+        ks = k.split('@') 
+        if ks[0] == 'mjf' :
+          if ks[1] in self.varnameslower : self._addData(ks[1], ks[2], jdat['meta'][k])
 
   def _collect(self):
     if not False in map(lambda x: os.environ.has_key(x), self.varnames) : self._collectViaFile() # check if all env variables are there
-    elif self._isVMNode() and self._pingMagicIP() : self._collectViaHttp() # alternatively try magic IP
+    elif self._serviceHttp() : self._collectViaHttp() # alternatively try magic IP
     else : self._message('ERROR', 'Cannot find job / machine features information on this node')
 
   def _run(self):
