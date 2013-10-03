@@ -38,8 +38,8 @@ class mjf:
     self.pret = pret
     self.dbg = dbg
     self.tmpfile = tmpfile
-    self.lastcollect = None
-    self.timeout = timeout                        # if information retrieved from http, return cache info if called within timeout minutes
+    self.lastcollect = datetime(1970,1,1,0,0,0,1)
+    self.timeout = int(timeout)                   # if information retrieved from http, return cache info if called within timeout minutes
     self.indent = None
     if self.pret : self.indent = 2
     self.collect()
@@ -156,27 +156,34 @@ class mjf:
       return False
     return True
 
-  def _getLastAccess(self):
+  def _getCache(self):
     if self.ext:
       f = open(self.tmpfile, 'r')
-      d = f.read()
+      self.data = json.loads(f.read())
       f.close()
-      return d
-    else :
-      return self.lastcollect
 
-  def _putLastAccess(self, t):
+  def _getLastCollect(self) :
+    if self.ext and os.path.isfile(self.tmpfile):
+      self._getCache()
+      if self.data.has_key('meta') and self.data['meta'].has_key('stamp') :
+        self.lastcollect = datetime.strptime(self.data['meta']['stamp'], '%Y-%m-%d %H:%M:%S.%f')
+
+  def _putLastCollect(self, t): 
+    if self.ext :
+      if not self.data.has_key('meta') : self.data['meta'] = {}
+      self.data['meta']['stamp'] = str(t)
+      self._putCache()
+
+  def _putCache(self):
     if self.ext :
       f = open(self.tmpfile, 'w')
-      f.write(t)
+      f.write(json.dumps(self.data))
       f.close()
-    else : self.lastcollect = t
         
   def _collectViaHttp(self):
     now = datetime.now()
-    delta = now - self.lastcollect
-    if self.lastcollect and delta.seconds < (self.timeout*60) :
-      self._putLastAccess(now)
+    self._getLastCollect()
+    if (now-self.lastcollect).seconds >= (self.timeout*60) :
       self._info('Collecting information via http connection')
       data = urllib2.urlopen('http://%s/openstack/latest/meta_data.json'%self.httpip).read()
       jdat = json.loads(data)
@@ -185,6 +192,7 @@ class mjf:
           ks = k.split('@') 
           if ks[0] == 'mjf' :
             if ks[1] in self.varnameslower : self._addData(ks[1], ks[2], jdat['meta'][k])
+      self._putLastCollect(now)
     else: self._info('Returning cached information as retrieval was called within interval (%d mins)' % self.timeout)
     
 
