@@ -8,7 +8,7 @@ class MJFException(Exception): pass
 
 class mjf:
 
-  def __init__(self, ext=False, pret=False, verb=False, dbg=False):
+  def __init__(self, ext=False, pret=False, verb=False, dbg=False, ip='0.0.0.0'):
     """
     initialise the class instance and collect machine / job features found on the node
     and store it in the internal data structure. Messages are returned either within the
@@ -26,8 +26,9 @@ class mjf:
     dbg: enable debug output of the tool (lot of info), ie. DEUBG level or above
     """
     self.varnames = ['MACHINEFEATURES', 'JOBFEATURES'] # names of machine features environment variables
-    self.varnameslower = map(lambda x: x.lower(), self.varnames) # lower case versions of the env variable names
-    self.httpip = '169.254.169.254'               # ip address for metat data in case of IaaS (openstack)
+    self.varnameslower = map(lambda x: x.lower(), self.varnames) # lower case versions of the env variable name
+    self.httpip = ip                              # ip address for metat data in case of IaaS (openstack)
+    if self.httpip == '0.0.0.0' : self.httpip = '169.254.169.254'
     self.httpport = 80
     self.data = {}                                # the machine / job features data structure
     self.ext = ext                                # is the module called from the command line (True) or imported (False)
@@ -148,11 +149,11 @@ class mjf:
     sock = socket.socket(socket.AF_INET)
     try : sock.connect((self.httpip,self.httpport))
     except Exception,e:
-      print e
       return False
     return True
         
   def _collectViaHttp(self):
+    self._info('Collecting information via http connection')
     data = urllib2.urlopen('http://%s/openstack/latest/meta_data.json'%self.httpip).read()
     jdat = json.loads(data)
     if jdat.has_key('meta') :
@@ -178,7 +179,8 @@ if __name__ == "__main__" :
   parser.add_option('-p', '--pretty', action='store_true', default=False, dest='pretty', help='turn on pretty printing of output')
   parser.add_option('-v', '--verbose', action='store_true', default=False, dest='verbose', help='increase verbosity of the tool')
   parser.add_option('-d', '--debug', action='store_true', default=False, dest='debug', help='enable debug output of the tool')
+  parser.add_option('-i', '--ip', action='store', default='0.0.0.0', dest='ip', help='in case of http service set the ip address')
   (options, args) = parser.parse_args()
   if args : parser.print_help()
 
-  mjf(ext=True, pret=options.pretty, verb=options.verbose, dbg=options.debug)._run()   # if the script is called from the command line execute and return data structure
+  mjf(ext=True, pret=options.pretty, verb=options.verbose, dbg=options.debug, ip=options.ip)._run()   # if the script is called from the command line execute and return data structure
