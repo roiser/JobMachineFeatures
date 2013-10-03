@@ -150,7 +150,7 @@ class MJFTestCommandline(unittest.TestCase) :
 
   def test_notwork(self):
     self.env.setup(cmd=True)
-    r = os.popen('mjf.py').read()[:-1]
+    r = os.popen('mjf.py -i 0.0.0.1').read()[:-1]
     d = json.loads(r)
     self.assertTrue(d.has_key('messages'))
     self.env.tearDown()
