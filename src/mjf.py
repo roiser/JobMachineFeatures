@@ -9,7 +9,7 @@ class MJFException(Exception): pass
 class mjf:
 
   def __init__(self, ext=False, pret=False, verb=False, dbg=False):
-    """
+    """ 
     initialise the class instance and collect machine / job features found on the node
     and store it in the internal data structure. Messages are returned either within the
     returned datastructure (key='messages') if called from the command line or as exceptions
