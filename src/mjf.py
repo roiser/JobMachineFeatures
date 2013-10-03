@@ -24,6 +24,8 @@ class mjf:
          to False the json output is returned in one string without newlines
     verb: enable verbose output of the tool, ie. return messages with INFO level or above
     dbg: enable debug output of the tool (lot of info), ie. DEUBG level or above
+    ip:  specify the ip address to retrieve the information in case of http retrieval,
+         if no ip address is specified the \"magic ip\" address 169.254.169.254 will be tried
     """
     self.varnames = ['MACHINEFEATURES', 'JOBFEATURES'] # names of machine features environment variables
     self.varnameslower = map(lambda x: x.lower(), self.varnames) # lower case versions of the env variable name
