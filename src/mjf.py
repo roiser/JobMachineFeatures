@@ -144,7 +144,7 @@ class mjf:
           val = fp.read()                           # ... read the file content
           self._debug('Value of file %s is %s' % (f,val))
           fp.close()
-          if val[-1] == '\n' : val = val[:-1]
+          if len(val) and val[-1] == '\n' : val = val[:-1]
           self._addData(datakey, f, val)
       else : self._error('Environment variable %s=%s does not point to a valid directory' % (var, envvar))
 
