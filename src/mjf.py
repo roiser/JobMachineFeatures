@@ -8,7 +8,7 @@ class MJFException(Exception): pass
 
 class mjf:
 
-  def __init__(self, ext=False, pret=False, verb=False, dbg=False, ip='0.0.0.0', timeout=60, tmpfile='mjf.stamp'):
+  def __init__(self, ext=False, pret=False, verb=False, dbg=False, ip='0.0.0.0', timeout=60, stampfile='mjf.stamp', force=False):
     """
     initialise the class instance and collect machine / job features found on the node
     and store it in the internal data structure. Messages are returned either within the
@@ -37,11 +37,12 @@ class mjf:
     self.verb = verb
     self.pret = pret
     self.dbg = dbg
-    self.tmpfile = tmpfile
-    self.lastcollect = None
-    self.timeout = timeout                        # if information retrieved from http, return cache info if called within timeout minutes
+    self.stampfile = stampfile
+    self.lastcollect = datetime(1970,1,1,0,0,0,1)
+    self.timeout = int(timeout)                   # if information retrieved from http, return cache info if called within timeout minutes
     self.indent = None
     if self.pret : self.indent = 2
+    self.force = force
     self.collect()
 
   def clean(self):
@@ -156,27 +157,34 @@ class mjf:
       return False
     return True
 
-  def _getLastAccess(self):
+  def _getCache(self):
     if self.ext:
-      f = open(self.tmpfile, 'r')
-      d = f.read()
+      f = open(self.stampfile, 'r')
+      self.data = json.loads(f.read())
       f.close()
-      return d
-    else :
-      return self.lastcollect
 
-  def _putLastAccess(self, t):
+  def _getLastCollect(self) :
+    if self.ext and os.path.isfile(self.stampfile):
+      self._getCache()
+      if self.data.has_key('meta') and self.data['meta'].has_key('stamp') :
+        self.lastcollect = datetime.strptime(self.data['meta']['stamp'], '%Y-%m-%d %H:%M:%S.%f')
+
+  def _putLastCollect(self, t): 
     if self.ext :
-      f = open(self.tmpfile, 'w')
-      f.write(t)
+      if not self.data.has_key('meta') : self.data['meta'] = {}
+      self.data['meta']['stamp'] = str(t)
+      self._putCache()
+
+  def _putCache(self):
+    if self.ext :
+      f = open(self.stampfile, 'w')
+      f.write(json.dumps(self.data))
       f.close()
-    else : self.lastcollect = t
         
   def _collectViaHttp(self):
     now = datetime.now()
-    delta = now - self.lastcollect
-    if self.lastcollect and delta.seconds < (self.timeout*60) :
-      self._putLastAccess(now)
+    self._getLastCollect()
+    if (now-self.lastcollect).seconds >= (self.timeout*60) :
       self._info('Collecting information via http connection')
       data = urllib2.urlopen('http://%s/openstack/latest/meta_data.json'%self.httpip).read()
       jdat = json.loads(data)
@@ -185,6 +193,7 @@ class mjf:
           ks = k.split('@') 
           if ks[0] == 'mjf' :
             if ks[1] in self.varnameslower : self._addData(ks[1], ks[2], jdat['meta'][k])
+      self._putLastCollect(now)
     else: self._info('Returning cached information as retrieval was called within interval (%d mins)' % self.timeout)
     
 
@@ -203,12 +212,14 @@ class mjf:
 if __name__ == "__main__" :
   parser = OptionParser()
   parser.add_option('-d', '--debug', action='store_true', default=False, dest='debug', help='enable debug output of the tool')
-  parser.add_option('-f', '--tmpfile', action='store', default='mjf.stamp', dest='tmpfile', help='location of the stamp file for http access')  
+  parser.add_option('-s', '--stampfile', action='store', default='mjf.stamp', dest='stampfile', help='location of the stamp file for http access')  
   parser.add_option('-i', '--ip', action='store', default='0.0.0.0', dest='ip', help='in case of http service set the ip address')
   parser.add_option('-p', '--pretty', action='store_true', default=False, dest='pretty', help='turn on pretty printing of output')
   parser.add_option('-t', '--timeout', action='store', default='60', dest='timeout', help='interval after which new info is returned')
   parser.add_option('-v', '--verbose', action='store_true', default=False, dest='verbose', help='increase verbosity of the tool')
+  parser.add_option('-f', '--force', action='store_true', default=False, dest='force', help='force retrieval of information despite caching')
+
   (options, args) = parser.parse_args()
   if args : parser.print_help()
 
-  mjf(ext=True, pret=options.pretty, verb=options.verbose, dbg=options.debug, ip=options.ip, timeout=options.timeout, tmpfile=options.tmpfile)._run()   # if the script is called from the command line execute and return data structure
+  mjf(ext=True, pret=options.pretty, verb=options.verbose, dbg=options.debug, ip=options.ip, timeout=options.timeout, stampfile=options.stampfile, force=options.force)._run()   # if the script is called from the command line execute and return data structure
