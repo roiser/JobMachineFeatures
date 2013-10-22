@@ -1,0 +1,4 @@
+This part contains one directory per service flavor and underneath the implemenation. The organization of the flavor directory is left to the committer of the source code. 
+
+For service implementers: please provide another README with instructions especially on how to deploy your code such that it can be re-used by others
+
