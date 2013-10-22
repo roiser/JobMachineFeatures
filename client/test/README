@@ -1,0 +1,5 @@
+j: job features test files
+m: machine features test files
+setup.sh: setup runtime environment for above dirs
+test_openstack.py: not working yet
+mjf-unit.py: unit tests using test files above
