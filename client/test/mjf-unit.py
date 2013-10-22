@@ -12,7 +12,7 @@ class Environ():
   def __init__(self):
     self.pwd = os.path.dirname(os.path.realpath(__file__.__str__()))
     self.pkd = os.path.dirname(self.pwd)
-    self.mdd = self.pkd+os.sep+'python-mjf'
+    self.mdd = self.pkd+os.sep+'src'+os.sep+'python-mjf'
     self.pyt_setup = False
     self.cmd_setup = False
     self.mjs_setup = False
