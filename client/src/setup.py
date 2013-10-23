@@ -9,7 +9,7 @@ def read(fname):
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
 
 setup(
-    name = "python-mjf",
+    name = "mjf",
     version = "0.0.1",
     author = "Stefan Roiser",
     author_email = "Stefan Roiser at cern dot ch",
@@ -17,7 +17,7 @@ setup(
     license = "ASL2",
     keywords = "WLCG",
     url = "https://github.com/roiser/JobMachineFeatures",
-    packages=['python-mjf'],
+    packages=['mjf'],
     long_description=read('README'),
     classifiers=[
         "Development Status :: 3 - Alpha",
