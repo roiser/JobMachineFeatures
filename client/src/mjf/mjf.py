@@ -43,7 +43,6 @@ class mjf:
     self.indent = None
     if self.pret : self.indent = 2
     self.force = force
-    self.collect()
 
   def clean(self):
     """
@@ -106,7 +105,7 @@ class mjf:
     print json.dumps(self.data, indent=self.indent)
 
   def _message(self, typ, txt) :
-    msg = '%s UTC - %s - %s' % (datetime.utcnow().isoformat(), typ, txt)
+    msg = 'Machine/JobFeatures - %s UTC - %s - %s' % (datetime.utcnow().isoformat(), typ, txt)
     if self.ext :                                 # if called from the command line, return messages within the data structure
       if not self.data.has_key('messages') : self.data['messages'] = [msg]
       else : self.data['messages'].append(msg)
