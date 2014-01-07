@@ -1,4 +1,5 @@
 import os
+del os.link # fix to make it work on afs
 from setuptools import setup
 
 # Utility function to read the README file.
