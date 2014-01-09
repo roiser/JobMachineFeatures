@@ -1,6 +1,10 @@
 package=python-mjf
 version=0.0.1
 all: rpm
+
+clean: 
+	rm -fr dist mjf.egg-info python-mjf-*.tar.gz
+
 prepare: 
 	python setup.py sdist
 	cp dist/mjf-${version}.tar.gz ./${package}-${version}.tar.gz
