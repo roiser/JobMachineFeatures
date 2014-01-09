@@ -3,7 +3,7 @@
 %{!?python_version: %global python_version %(%{__python} -c "import sys ; print sys.version[:3]")}
 %endif
 
-Name:           mjf
+Name:           python-mjf
 Version:        0.0.1
 Release:        1%{?dist}
 Summary:        WLCG machine job features wrapper module
