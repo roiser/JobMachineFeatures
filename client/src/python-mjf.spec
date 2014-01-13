@@ -34,6 +34,9 @@ rm -rf %{buildroot}
 %{__python} setup.py install --skip-build --root %{buildroot} \
            --install-data=%{_datadir}
 
+mkdir -p %{buildroot}/usr/bin
+cp  %{buildroot}/%{python_sitelib}/mjf/mjf.py %{buildroot}/usr/bin/mjf
+chmod +x %{buildroot}/usr/bin/mjf
 #%check
 #{__python} selftest.py
 
@@ -45,6 +48,7 @@ rm -rf %{buildroot}
 %defattr(-,root,root,-)
 #doc AUTHORS CHANGELOG lgpl.txt NEWS README.txt
 %{python_sitelib}/mjf*
+/usr/bin/mjf
 %doc %{python_sitelib}/mjf-%{version}-*-info
 
 %changelog
