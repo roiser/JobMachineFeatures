@@ -1,7 +1,5 @@
-%if 0%{?rhel} && 0%{?rhel} < 5
 %{!?python_sitelib: %global python_sitelib %(%{__python} -c "from distutils.sysconfig import get_python_lib; print get_python_lib()")}
 %{!?python_version: %global python_version %(%{__python} -c "import sys ; print sys.version[:3]")}
-%endif
 
 Name:           python-mjf
 Version:        0.0.1
