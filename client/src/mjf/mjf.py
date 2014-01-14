@@ -1,8 +1,12 @@
 #!/usr/bin/env python
 
-import os, json, socket, urllib2
+import os, socket, urllib2
 from datetime import datetime
 from optparse import OptionParser
+try: 
+    import simplejson as json
+except ImportError:
+    import json
 
 class MJFException(Exception): pass
 
