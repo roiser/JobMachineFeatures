@@ -3,7 +3,7 @@
 
 Name:           python-mjf
 Version:        0.0.1
-Release:        1%{?dist}
+Release:        2%{?dist}
 Summary:        WLCG machine job features wrapper module
 Group:          Development/Languages
 License:        ASL 2.0
