@@ -1,5 +1,7 @@
-This is the client part of the machine features repository. It can be used as abstraction layer by VOs to gather job/machine features no matter on which service flavor the payload is executed. 
+This is the client part of the machine features repository. It can be used as abstraction layer by VOs to gather machine/job features no matter on which service flavor the payload is executed. 
 
 src: the source code + setup.py script to produce a python module
 
 test: test suite (unit test) and toy features mimicking bare metal file system deployment which are used by the tests
+
+sam: the IT/Nagios SAM probe for testing machine/job features on WLCG infrastructures
