@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/python
 
 from urllib import urlopen, urlretrieve
 import tarfile, sys, os
@@ -70,16 +70,16 @@ class mjfprobe :
     self.test_range_float(val, upper, lower)
   
   def test_jobstart_secs(self, val):
-    pass
+    self.info('no test, value: %i' % val)
   
   def test_wall_limit_secs(self, val):
-    pass
+    self.info('no test, value: %i' % val)
   
   def test_cpu_limit_secs(self, val):
-    pass
+    self.info('no test, value: %i' % val)
   
   def test_cpu_limit_secs_lrms(self, val):
-    pass
+    self.info('no test, value: %i' % val)
   
   def test_allocated_CPU(self, val):
     upper = 128
@@ -136,9 +136,10 @@ class mjfprobe :
 
   def test_feature(self, feature, value):
     try:
+      self.info('start testing feature %s' % feature)
       fun = getattr(self, 'test_'+feature)
       fun(value)
-      self.info('testing feature %s' % feature)
+      self.info('end testing feature %s' % feature)
     except AttributeError :
       self.warning('don\'t know how to test feature %s' % feature)
 
@@ -159,9 +160,10 @@ class mjfprobe :
     try : 
       m.collect()
       features = m.features()
-      for featureclass in features.keys() :
+      self.info(features)
+      for featureclass in self.features.keys() :
         self.info('testing %s' % featureclass)
-        for feature in features[featureclass].keys() : self.test_feature(feature, features[featureclass[feature]])
+        for feature in self.features[featureclass] : self.test_feature(feature, features[featureclass][feature])
     except MJFException, e:
       self.warning('collecting features failed with message "%s"' % e)
 
