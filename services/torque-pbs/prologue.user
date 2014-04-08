@@ -1,0 +1,37 @@
+#!/bin/bash
+# WLCG Worker Node Environment
+# PBS Prologue script: clean up the $JOBFEATURES file`
+#
+# Config settings for the wlcg-wn-env scripts
+#
+# Copyright (c) 2012 by
+#   Jan Just Keijser (janjust@nikhef.nl)
+#   Nikhef
+#   Amsterdam
+#   The Netherlands
+
+# a PBS user prologue script is called with up to 7 parameters, out of which we
+# are only interesed in $1 and $5:
+# $1 = jobid
+# $5 = job specifics such as cputime and walltime
+#       e.g. cput=04:00:00,neednodes=1,nodes=1,pvmem=400mb,walltime=04:00:00
+
+# overrule any environment variable setting with the parameter supplied to the script
+PBS_JOBID=$1
+
+# Get the configuration setting from the /etc/wlcg-wn-env.conf file
+eval "JOBFEATURES=`sed -n '/^jobfeatures/s/^jobfeatures *= *\(.*\)/\1/p' /etc/wlcg-wn-env.conf 2> /dev/null`"
+# fallback if setting is missing
+if [ -z "${JOBFEATURES}" ]
+then
+    JOBFEATURES=${TMPDIR:-/tmp}/jobfeatures/${PBS_JOBID}
+fi
+
+# Create the JOBFEATURES directory if it does not exist yet
+mkdir -p ${JOBFEATURES} || exit 1
+
+# Set up the separate files
+date --utc > ${JOBFEATURES}/jobstart
+echo "$5" | cut -d, -f1 | cut -d= -f2 | awk -F: '{ limit=3600*$1+60*$2+$3 ; printf "%d\n", limit }' > ${JOBFEATURES}/cpu_limit
+echo "$5" | cut -d, -f5 | cut -d= -f2 | awk -F: '{ limit=3600*$1+60*$2+$3 ; printf "%d\n", limit }' > ${JOBFEATURES}/wall_limit
+

@@ -1,0 +1,29 @@
+#!/bin/bash
+# WLCG Worker Node Environment
+# PBS Epilogue script: clean up the $JOBFEATURES file`
+#
+# Config settings for the wlcg-wn-env scripts
+#
+# Copyright (c) 2012 by
+#   Jan Just Keijser (janjust@nikhef.nl)
+#   Nikhef
+#   Amsterdam
+#   The Netherlands
+
+# a PBS user epilogue script is called with up to 7 parameters, out of which we
+# are only interesed in $1:
+# $1 = jobid
+
+# overrule any environment variable setting with the parameter supplied to the script
+PBS_JOBID=$1
+
+# Get the configuration setting from the /etc/wlcg-wn-env.conf file
+eval "JOBFEATURES=`sed -n '/^jobfeatures/s/^jobfeatures *= *\(.*\)/\1/p' /etc/wlcg-wn-env.conf 2> /dev/null`"
+# fallback if setting is missing
+if [ -z "${JOBFEATURES}" ]
+then
+    JOBFEATURES=${TMPDIR:-/tmp}/jobfeatures/${PBS_JOBID}
+fi
+
+rm -rf ${JOBFEATURES}
+
