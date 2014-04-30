@@ -43,13 +43,12 @@ class log :
 
 class mjfAdmin :
 
-  def __init__(self, server, port, database, bulk, user, args, selkey, value, logi=None):
+  def __init__(self, server, port, database, user, args, selkey, value, logi=None):
     self.log = log()
     if logi: self.log = logi
     self.server = server
     self.port = port
     self.database = database
-    self.bulk = bulk
     self.selkey = selkey
     self.value = value
     self.user = user
@@ -185,7 +184,6 @@ if __name__ == '__main__' :
    version:
 """
   parser = OptionParser(usage=usage) #, description=desc)
-  parser.add_option('-b', '--bulk', action='store_true', default='False', dest='bulk', help='execute a bulk operation on multiple documents')
   parser.add_option('-d', '--database', action='store', default='machinejobfeatures', dest='database', help='database name storing the features (default="machinejobfeatures")')
   parser.add_option('-p', '--port', action='store', default='5984', dest='port', help='port to access the web interface of the store (default=5984)')
   parser.add_option('-q', '--quiet', action='store_false', default=True, dest='quiet', help='only print warning and error messages')
@@ -223,7 +221,7 @@ if __name__ == '__main__' :
 
   logi = log(options.verbose,options.quiet)
 
-  mad = mjfAdmin(options.server, options.port, options.database, options.bulk, options.user, args, selkey=selkey, value=value, logi=logi)
+  mad = mjfAdmin(options.server, options.port, options.database, options.user, args, selkey=selkey, value=value, logi=logi)
   if '_'+action in dir(mad) : eval('mad._'+action+'()')
   
 
