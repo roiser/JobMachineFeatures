@@ -3,7 +3,7 @@
 VERSION='0.0.1'
 
 from optparse import OptionParser, IndentedHelpFormatter
-import sys, json, urllib, httplib, os
+import sys, json, urllib, httplib, os, base64, getpass
 
 # class PlainHelpFormatter(IndentedHelpFormatter):
 #     def format_description(self, description):
@@ -23,24 +23,27 @@ class log :
     self.inf = inf
     self.module = __file__
 
-  def message(self, typ, txt, ext=False):
-    print '%s: %s: %s' % (self.module.ljust(len(self.module)), typ.ljust(7), txt)
+  def message(self, typ, txt, nwl, ext=False):
+    nlstr = ''
+    if nwl : nlstr = '\n'
+    sys.stdout.write('%s: %s: %s%s' % (self.module.ljust(len(self.module)), typ.ljust(7), txt, nlstr))
+    #print '%s: %s: %s' % (self.module.ljust(len(self.module)), typ.ljust(7), txt)
     if ext : sys.exit(1)
 
-  def debug(self, txt) : 
-    if self.dbg: self.message('DEBUG', txt)
+  def debug(self, txt, nwl=True) :
+    if self.dbg: self.message('DEBUG', txt, nwl)
 
-  def info(self, txt) : 
-    if self.inf: self.message('INFO', txt)
+  def info(self, txt, nwl=True) :
+    if self.inf: self.message('INFO', txt, nwl)
 
-  def warning(self, txt) : self.message('WARNING', txt)
+  def warning(self, txt, nwl=True) : self.message('WARNING', txt, nwl)
 
-  def error(self, txt, ext=True) : self.message('ERROR', txt, ext)
+  def error(self, txt, nwl=True, ext=True) : self.message('ERROR', txt, nwl, ext)
     
 
 class mjfAdmin :
 
-  def __init__(self, server, port, database, bulk, args, selkey, value, logi=None):
+  def __init__(self, server, port, database, bulk, user, args, selkey, value, logi=None):
     self.log = log()
     if logi: self.log = logi
     self.server = server
@@ -49,9 +52,30 @@ class mjfAdmin :
     self.bulk = bulk
     self.selkey = selkey
     self.value = value
+    self.user = user
+    self.pwd = ''
+    self.pwfile = '.wlcgmjfadmin.pw'
     self.arguments = args
     self.fullserver = 'http://%s:%s' % (self.server, self.port)
-    self.headers = {"Content-type": "application/json", "Accept-Encoding": "*"}
+    self._getPassword()
+    authb64 = base64.encodestring('%s:%s'%(self.user, self.pwd)).replace('\n','')
+    self.headers = {"Content-type": "application/json", "Accept-Encoding": "*", "Authorization": "Basic %s"%authb64 }
+
+  def _getPassword(self) :
+    if self.pwd : return
+    homdir = os.path.expanduser('~')
+    pwfullfile = homdir+os.sep+self.pwfile
+    if os.path.isfile(pwfullfile) :
+      f = open(pwfullfile)
+      self.pwd = f.read().replace('\n','')
+      f.close()
+    else :
+      self.log.info('Please provide password for admin user:', nwl=False)
+      self.pwd = getpass.getpass('')
+      f = open(pwfullfile, 'w')
+      f.write(self.pwd)
+      f.close()
+      self.log.debug('Admin password written to ' + pwfullfile)
 
   def _strToJson(self, instr) :
     # ugly hack, this needs to be fixed
@@ -161,12 +185,13 @@ if __name__ == '__main__' :
    version:
 """
   parser = OptionParser(usage=usage) #, description=desc)
-  parser.add_option('-q', '--quiet', action='store_false', default=True, dest='quiet', help='only print warning and error messages')
-  parser.add_option('-v', '--verbose', action='store_true', default=False, dest='verbose', help='increase verbosity of output')
-  parser.add_option('-s', '--server', action='store', default='wlcg-mjf.cern.ch', dest='server', help='host name of the key value store (default="wlcg-mjf")')
-  parser.add_option('-p', '--port', action='store', default='5984', dest='port', help='port to access the web interface of the store (default=5984)')
-  parser.add_option('-d', '--database', action='store', default='machinejobfeatures', dest='database', help='database name storing the features (default="machinejobfeatures")')
   parser.add_option('-b', '--bulk', action='store_true', default='False', dest='bulk', help='execute a bulk operation on multiple documents')
+  parser.add_option('-d', '--database', action='store', default='machinejobfeatures', dest='database', help='database name storing the features (default="machinejobfeatures")')
+  parser.add_option('-p', '--port', action='store', default='5984', dest='port', help='port to access the web interface of the store (default=5984)')
+  parser.add_option('-q', '--quiet', action='store_false', default=True, dest='quiet', help='only print warning and error messages')
+  parser.add_option('-s', '--server', action='store', default='wlcg-mjf.cern.ch', dest='server', help='host name of the key value store (default="wlcg-mjf")')
+  parser.add_option('-u', '--user', action='store', default='admin', dest='user', help='admin user name on couchdb (default="admin")')
+  parser.add_option('-v', '--verbose', action='store_true', default=False, dest='verbose', help='increase verbosity of output')
   
   action = ''
   selkey = ''
@@ -198,7 +223,7 @@ if __name__ == '__main__' :
 
   logi = log(options.verbose,options.quiet)
 
-  mad = mjfAdmin(options.server, options.port, options.database, options.bulk, args, selkey=selkey, value=value, logi=logi)
+  mad = mjfAdmin(options.server, options.port, options.database, options.bulk, options.user, args, selkey=selkey, value=value, logi=logi)
   if '_'+action in dir(mad) : eval('mad._'+action+'()')
   
 
