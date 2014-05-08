@@ -156,14 +156,16 @@ class mjfprobe :
   def test_features_with_mjf(self) :
     self.info('testing features with the mjf tool')
     from mjf import mjf, MJFException
-    m = mjf()
     try : 
+      m = mjf()
       m.collect()
       features = m.features()
-      self.info(features)
-      for featureclass in self.features.keys() :
-        self.info('testing %s' % featureclass)
-        for feature in self.features[featureclass] : self.test_feature(feature, features[featureclass][feature])
+      if features : 
+        self.info(features)
+        for featureclass in self.features.keys() :
+          self.info('testing %s' % featureclass)
+          for feature in self.features[featureclass] : self.test_feature(feature, features[featureclass][feature])
+      else: self.warning('features collected successful but are empty')
     except MJFException, e:
       self.warning('collecting features failed with message "%s"' % e)
 
