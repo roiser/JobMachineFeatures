@@ -1,1 +1,6 @@
-An implemenation for a key/value store to keep, administer and disseminate machine/job features to clients, e.g. in the context of IaaS systems
+Couchdb key/value store
+===
+
+This part of the repository contains information on how to setup and administer a machine/job features service based on a couchdb key/value store. The client tool mjf.py is capable of retrieving this information transparently if available. 
+
+More information can be found at https://twiki.cern.ch/twiki/bin/edit/LCG/MjfCouchDbKeyValueStore
