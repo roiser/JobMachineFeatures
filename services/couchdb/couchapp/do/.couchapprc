@@ -1,7 +1,7 @@
 {
     "env" : {
         "default" : {
-            "db" : "http://admin:$COUCHAPPPW@wlcg-mjf.cern.ch:5984/machinejobfeatures"
+            "db" : "http://admin:${COUCHAPPPW}@wlcg-mjf.cern.ch:5984/machinejobfeatures"
         }
     }
 }
