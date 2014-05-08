@@ -2,6 +2,10 @@
 
 VERSION='0.0.1'
 
+# Requirements: 
+# - no dictionary name (e.g. "machinefeatures", "jobfeatures" etc) must start with an underscore "_" (reserved for couchdb and filtered out in some cases below)
+
+
 from optparse import OptionParser, IndentedHelpFormatter
 import sys, json, urllib, httplib, os, base64, getpass
 
@@ -56,11 +60,11 @@ class mjfAdmin :
     self.pwfile = '.wlcgmjfadmin.pw'
     self.arguments = args
     self.fullserver = 'http://%s:%s' % (self.server, self.port)
-    self._getPassword()
+    self.__getPassword()
     authb64 = base64.encodestring('%s:%s'%(self.user, self.pwd)).replace('\n','')
     self.headers = {"Content-type": "application/json", "Accept-Encoding": "*", "Authorization": "Basic %s"%authb64 }
 
-  def _getPassword(self) :
+  def __getPassword(self) :
     if self.pwd : return
     homdir = os.path.expanduser('~')
     pwfullfile = homdir+os.sep+self.pwfile
@@ -76,9 +80,10 @@ class mjfAdmin :
       f.close()
       self.log.debug('Admin password written to ' + pwfullfile)
 
-  def _strToJson(self, instr) :
+  def __strToJson(self, instr, retStr=False) :
     # ugly hack, this needs to be fixed
     newstr = str(instr).replace("u'", "'").replace("'", '"').replace("True","true").replace("False","false")
+    if retStr : return newstr
     js = None
     try : 
       js = json.loads(newstr)
@@ -86,7 +91,7 @@ class mjfAdmin :
       self.log.error('conversion of string %s, %s' % (newstr, e))
     return js
 
-  def _httprequest(self, typ, url, doc='', headeradd={}, jsn=True) : 
+  def __httprequest(self, typ, url, doc='', headeradd={}, jsn=True) : 
     header = dict(self.headers.items() + headeradd.items())
     conn = httplib.HTTPConnection(self.server, port=self.port)
     if self.log.dbg : conn.set_debuglevel(99)
@@ -102,7 +107,7 @@ class mjfAdmin :
 
   def _dbinstalled(self): 
     self.log.debug('Checking if database is installed')
-    data = self._httprequest('GET', '_all_dbs')
+    data = self.__httprequest('GET', '_all_dbs')
     self.log.debug('Databases found: %s' %  data)
     if self.database in data : return True
     else : return False    
@@ -110,7 +115,7 @@ class mjfAdmin :
   def _installdb(self) :
     if not self._dbinstalled():
       self.log.info('Installing database %s at server %s' % (self.database, self.fullserver))
-      data = self._httprequest('PUT', self.database, jsn=False)
+      data = self.__httprequest('PUT', self.database, jsn=False)
       self.log.info('Data: %s' % data)
     else: 
       self.log.warning('Database %s already installed on server %s' % (self.database, self.fullserver))
@@ -118,53 +123,77 @@ class mjfAdmin :
   def _removedb(self) : 
     if self._dbinstalled(): 
       self.log.info('Droping database %s from server %s' % (self.database, self.fullserver))
-      data = self._httprequest('DELETE', self.database, jsn=False)
+      data = self.__httprequest('DELETE', self.database, jsn=False)
       self.log.info('Data: %s' % data)
     else: 
       self.log.warning('Database %s not found on server %s' % (self.database, self.fullserver))
 
   def _checkdb(self) :
     self.log.info('Checking connection to couchdb server %s' % (self.fullserver))
-    info = self._httprequest('GET', '')
+    info = self.__httprequest('GET', '')
     if info.has_key('couchdb') and info['couchdb'] == 'Welcome' : 
       self.log.info('Successful contacting server %s, response %s' % (self.fullserver, str(info)))
     else :
       self.log.error('Cannot connect to server %s, return message: %s' % (self.fullserver, str(info)))
-    dbs = self._httprequest('GET', '_all_dbs')
+    dbs = self.__httprequest('GET', '_all_dbs')
     if self.database in dbs : self.log.info('Database %s installed' % self.database)
     else : self.log.error('Database %s not installed on server, installed DBs are %s' % ( self.database, dbs))
 
-  def _put(self) : 
+  def __put(self, value) :
     key = self.arguments[1]
-    value = self.arguments[2]
-    self.log.debug('Putting document(s) %s on database %s at server %s' % (key, self.database, self.fullserver))
-    inf = self._httprequest('PUT', self.database + os.sep + key, doc=value)
-    jinfo = self._strToJson(inf)
-    if jinfo.has_key('error') : self.log.error('Could not create post document %s, error=%s, reason=%s' % (key, jinfo.get('error'), jinfo.get('reason')))
-    else: self.log.info('Put successful '+ str(jinfo))
+    jvalue = self.__strToJson(value,retStr=True)
+    self.log.debug('Putting document %s on database %s at server %s' % (key, self.database, self.fullserver))
+    inf = self.__httprequest('PUT', self.database + os.sep + key, doc=jvalue)
+    if inf.has_key('error') : self.log.error('Could not create post document %s, error=%s, reason=%s' % (key, inf.get('error'), inf.get('reason')))
+    else: self.log.info('Put successful '+ str(inf))
 
-  def _get(self) : 
+  def _put(self) : 
+    value = self.arguments[2]
+    self.__put(value)
+
+  def _update(self) : 
+    inf = self.__get()
+    value = self.arguments[2]
+    valdict = {}
+    try: valdict = eval(value)
+    except Exception, e: self.log.error('Cannot evaluate string %s as a python object' % value)
+    if not isinstance(valdict,dict) : self.log.error('String %s did not evaluate to a python dictionary but to type %s' % (value, type(valdict)))
+    if True in map(lambda x: x[0] == '_', valdict.keys()) : self.log.error('No dictionary keys starting with underscore allowed in the update elements')
+    couchinf = self.__get()
+    self.log.debug('Couch document before update %s' % couchinf)
+    couchinf.update(valdict)
+    self.log.debug('Couch document after update %s' % couchinf)
+    if inf.has_key('error') : couchinf = {}
+    for k in valdict.keys() : 
+      if couchinf.has_key(k) : couchinf[k] = dict(couchinf[k].items() + valdict[k].items())
+      else : couchinf[k] = valdict[k]
+    self.__put(couchinf)
+ 
+  def __get(self) : 
     key = self.arguments[1]
     self.log.debug('Getting document(s) from database %s at server %s' % (self.database, self.fullserver))
-    inf = self._httprequest('GET', self.database + os.sep + key)
-    jinfo = self._strToJson(inf)
-    if jinfo.has_key('error') : self.log.error('Cannot get document %s, error=%s, reason=%s' % (key, jinfo.get('error'), jinfo.get('reason')))
-    else: self.log.info('Get successful' + str(jinfo))
+    inf = self.__httprequest('GET', self.database + os.sep + key)
+    if inf.has_key('error') : self.log.warning('Cannot get document %s, error=%s, reason=%s' % (key, inf.get('error'), inf.get('reason')))
+    elif not isinstance(inf, dict) : self.log.error('Document returned from couchdb %s is not a python dictionary' % str(inf))
+    else : return inf
+
+  def _get(self) :
+    inf = self.__get()
+    if inf.has_key('error') : self.log.error('Get of document %s failed, error=%s, reason=%s' % (self.arguments[1], inf.get('error'), inf.get('reason')))
+    else : self.log.info('Get successful ' + str(inf))
 
   def _delete(self) : 
     key = self.arguments[1]
     self.log.debug('Deleting document(s) %s from database %s at server %s' % (key, self.database, self.fullserver))
-    inf = self._httprequest('GET', self.database + os.sep + key)
-    jinf = self._strToJson(inf)
-    if jinf.has_key('_rev'):
-      rev = jinf['_rev'] 
+    inf = self.__httprequest('GET', self.database + os.sep + key)
+    if inf.has_key('_rev'):
+      rev = inf['_rev'] 
       self.log.debug('Deleting object with key %s and revision %s' % ( key, rev ))
-      inf2 = self._httprequest('DELETE', self.database + os.sep + key, headeradd={"If-Match":rev})
-      jinf2 = self._strToJson(inf2)
-      if jinf2.has_key('error') : self.log.error('Cannot delete document %s, error=%s, reason=%s' % (key, jinf2.get('error'), jinf2.get('reason')))
-      else : self.log.info('Delete successful '+ str(jinf2))
-    elif jinf.has_key('error') : 
-      self.log.error('Cannot find revision for document %s, error=%s, reason=%s' % (key, jinf['error'], jinf.get('reason')))
+      inf2 = self.__httprequest('DELETE', self.database + os.sep + key, headeradd={"If-Match":rev})
+      if inf2.has_key('error') : self.log.error('Cannot delete document %s, error=%s, reason=%s' % (key, inf2.get('error'), inf2.get('reason')))
+      else : self.log.info('Delete successful '+ str(inf2))
+    elif inf.has_key('error') : 
+      self.log.error('Cannot find revision for document %s, error=%s, reason=%s' % (key, inf['error'], inf.get('reason')))
 
   def _version(self): 
     print VERSION
@@ -172,8 +201,8 @@ class mjfAdmin :
 
 
 if __name__ == '__main__' : 
-  actions = ['installdb','removedb','checkdb','version','put','get','delete']
-  usage = 'usage: %prog [options] [put <key> <value>] | [ get | delete <key>] | [ installdb | removedb | checkdb | version ]'
+  actions = ['installdb','removedb','checkdb','version','put','get','delete','update']
+  usage = 'usage: %prog [options] [put | update <key> <value>] | [ get | delete <key>] | [ installdb | removedb | checkdb | version ]'
   desc = """Arguments:\n
    put:\n
    get:\n
@@ -201,7 +230,7 @@ if __name__ == '__main__' :
     sys.exit(1)
   else : action=args[0]
 
-  if action == 'put' :
+  if action in ['put', 'update'] :
     if len(args) != 3 : 
       parser.print_help()
       sys.exit(1)
