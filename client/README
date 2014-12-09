@@ -1,3 +1,0 @@
-the mjf.py client has been removed from the repository as no abstraction layer is necessary anymore. 
-
-Please see e.g. slides in the Dec '14 GDB at https://indico.cern.ch/event/272780/ on how to use features from a client point of view
