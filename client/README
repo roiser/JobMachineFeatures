@@ -1,7 +1,3 @@
-This is the client part of the machine features repository. It can be used as abstraction layer by VOs to gather machine/job features no matter on which service flavor the payload is executed. 
+the mjf.py client has been removed from the repository as no abstraction layer is necessary anymore. 
 
-src: the source code + setup.py script to produce a python module
-
-test: test suite (unit test) and toy features mimicking bare metal file system deployment which are used by the tests
-
-sam: the IT/Nagios SAM probe for testing machine/job features on WLCG infrastructures 
+Please see e.g. slides in the Dec '14 GDB at https://indico.cern.ch/event/272780/ on how to use features from a client point of view
